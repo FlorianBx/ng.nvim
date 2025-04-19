@@ -44,54 +44,44 @@ local tcb_content_provider = {
 
 local M = {}
 
---- Command finds the template for a component.
---
----@param opts table Keys:
---     reuse_window boolean: Jump to existing window if buffer is already open.
-M.goto_template_for_component = function(opts)
-  opts = opts or {}
-  local reuse_window = opts.reuse_window or false
-  req.get_template_location_for_component(function(err, result)
-    if result then
-      vim.lsp.util.jump_to_location(result, 'utf-8', reuse_window) -- TODO: check encoding
-    end
-  end)
+local function get_base(filename)
+  -- enlève .ts, .html, ou .spec.ts à la fin pour obtenir le préfixe commun
+  return filename:gsub('%.component%.spec%.ts$', '.component')
+                :gsub('%.component%.ts$', '.component')
+                :gsub('%.component%.html$', '.component')
 end
 
---- Command finds components which reference an external template in
---- their `templateUrl`s.
---
----@param opts table Keys:
---     reuse_window boolean: Jump to existing window if buffer is already open.
-M.goto_component_with_template_file = function(opts)
-  opts = opts or {}
-  local reuse_window = opts.reuse_window or false
-  req.get_component_for_open_external_template(function(err, result)
-    if result and #result ~= 0 then
-      -- If there is more than one component that references the template, show them all. Otherwise
-      -- go to the component immediately.
-      if #result == 1 then
-        vim.lsp.util.jump_to_location(result[1], 'utf-8', reuse_window) -- TODO: check encoding
-      else
-        vim.fn.setqflist({}, ' ', {
-          title = 'Language Server',
-          items = vim.lsp.util.locations_to_items(result, 'utf-8'),
-        })
-        vim.cmd.copen()
-      end
-    end
-  end)
+M.goto_component_ts = function()
+  local filename = vim.api.nvim_buf_get_name(0)
+  local base = get_base(filename)
+  local ts = base .. '.ts'
+  if vim.fn.filereadable(ts) == 1 then
+    vim.cmd('edit ' .. vim.fn.fnameescape(ts))
+  else
+    vim.notify('.ts non trouvé : ' .. ts, vim.log.levels.INFO)
+  end
 end
 
---- Command displays a typecheck block for the template a user has
---- an active selection over, if any.
-M.get_template_tcb = function()
-  req.get_tcb_under_cursor(function(err, result)
-    if result then
-      tcb_content_provider:update(result.uri, result.content)
-      tcb_content_provider:show(result.selections)
-    end
-  end)
+M.goto_component_html = function()
+  local filename = vim.api.nvim_buf_get_name(0)
+  local base = get_base(filename)
+  local html = base .. '.html'
+  if vim.fn.filereadable(html) == 1 then
+    vim.cmd('edit ' .. vim.fn.fnameescape(html))
+  else
+    vim.notify('.html non trouvé : ' .. html, vim.log.levels.INFO)
+  end
+end
+
+M.goto_component_spec = function()
+  local filename = vim.api.nvim_buf_get_name(0)
+  local base = get_base(filename)
+  local spec = base .. '.spec.ts'
+  if vim.fn.filereadable(spec) == 1 then
+    vim.cmd('edit ' .. vim.fn.fnameescape(spec))
+  else
+    vim.notify('.spec.ts non trouvé : ' .. spec, vim.log.levels.INFO)
+  end
 end
 
 return M

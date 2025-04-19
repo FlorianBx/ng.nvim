@@ -21,4 +21,8 @@ M.is_in_angular_project = function(callback)
   execute_command('angular/isAngularCoreInOwningProject', callback)
 end
 
+M.get_spec_for_component = function(callback)
+  execute_command('angular/getSpecForComponent', callback)
+end
+
 return M
